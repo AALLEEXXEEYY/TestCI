@@ -1,40 +1,46 @@
-name: Run MTSBank tests
+name: Run test
 
-on:
-  push
+env:
+  OS: ubuntu-latest
+
+on: push
 
 jobs:
-  run_tests:
+  install_dependency_run_test_and_get_allure_report:
     runs-on: ubuntu-latest
-
     steps:
-
-      - name: "Скачивание selenoid"
+      - name: "Скачиваем селенойд"
         run: curl -s https://aerokube.com/cm/bash  | bash
-      - name: "Расширение прав на запуск selenoid"
+
+      - name: "Даем права на запуск селенойда"
         run: chmod +x ./cm
-      - name: "Запуск selenoid"
+
+      - name: "Запускаем selenoid"
         run: ./cm selenoid start --vnc
-      - name: "Запуск selenoid-ui"
+
+      - name: "Запускаем selenoid-ui"
         run: ./cm selenoid-ui start
-      - name: "Использование main репозитория"
-        uses: actions/checkout@v3
-      - name: "Запуск тестов"
+
+      - name: "Используем main репозиторий"
+        uses: actions/checkout@v1
+
+      - name: "Запускаем тесты"
+        if: always()
         run: mvn clean test
         continue-on-error: true
-      - name: "Генерация allure report"
+
+      - name: "Генерируем аллюр-репорт"
         uses: simple-elf/allure-report-action@master
         id: allure-report
         with:
-          allure_results: target/allure-results
+          allure_results: allure-results
           gh_pages: gh-pages
-          allure_report: target/allure-report
-          allure_history: target/allure-history
+          allure_report: allure-report
+          allure_history: allure-history
 
-      - name: "Создание ветки gh-pages содержащей allure report"
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
+      - name: "Пушим аллюр-репорт в ветку allure_reports"
+        uses: peaceiris/actions-gh-pages@v2
+        env:
           PERSONAL_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PUBLISH_BRANCH: gh-pages
-          PUBLISH_DIR: target/allure-history
+          PUBLISH_BRANCH: allure_reports
+          PUBLISH_DIR: allure-history
